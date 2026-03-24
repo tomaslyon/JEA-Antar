@@ -216,6 +216,17 @@
 </div>
 
 <script>
+// ── Precargar logo en canvas para PDF ─────────────────
+const logoImg = document.getElementById('antarchildeLogo');
+const logoCanvas = document.getElementById('logoCanvas');
+logoImg.onload = function() {
+  logoCanvas.width = logoImg.naturalWidth;
+  logoCanvas.height = logoImg.naturalHeight;
+  const lctx = logoCanvas.getContext('2d');
+  lctx.drawImage(logoImg, 0, 0);
+  logoCanvas.dataset.loaded = 'true';
+};
+
 // ── Date ──────────────────────────────────────────────
 const today = new Date();
 const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
@@ -302,16 +313,13 @@ function generatePDF(nombre, rut, ciudad, apoderado) {
   const doc = new jsPDF({ unit: 'mm', format: 'letter' });
   const W = 215.9, ml = 25, mr = 25, tw = W - ml - mr;
 
-  // Logo real AntarChile desde imagen embebida
-  const logoImg = document.getElementById('antarchildeLogo');
-  const logoCanvas = document.createElement('canvas');
-  logoCanvas.width = logoImg.naturalWidth;
-  logoCanvas.height = logoImg.naturalHeight;
-  const lctx = logoCanvas.getContext('2d');
-  lctx.drawImage(logoImg, 0, 0);
+  // Logo desde canvas oculto ya cargado
+  const logoCanvas = document.getElementById('logoCanvas');
   const logoData = logoCanvas.toDataURL('image/png');
   const logoW = 38, logoH = 22;
-  doc.addImage(logoData, 'PNG', W/2 - logoW/2, 8, logoW, logoH);
+  if (logoCanvas.dataset.loaded === 'true') {
+    doc.addImage(logoData, 'PNG', W/2 - logoW/2, 8, logoW, logoH);
+  }
 
   // Título PODER
   doc.setTextColor(30,30,30);
