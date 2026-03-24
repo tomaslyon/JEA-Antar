@@ -216,17 +216,6 @@
 </div>
 
 <script>
-// ── Precargar logo en canvas para PDF ─────────────────
-const logoImg = document.getElementById('antarchildeLogo');
-const logoCanvas = document.getElementById('logoCanvas');
-logoImg.onload = function() {
-  logoCanvas.width = logoImg.naturalWidth;
-  logoCanvas.height = logoImg.naturalHeight;
-  const lctx = logoCanvas.getContext('2d');
-  lctx.drawImage(logoImg, 0, 0);
-  logoCanvas.dataset.loaded = 'true';
-};
-
 // ── Date ──────────────────────────────────────────────
 const today = new Date();
 const dias = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
@@ -288,7 +277,7 @@ function clearSig() { ctx.clearRect(0, 0, canvas.width, canvas.height); hasSig =
 // ── PDF generation ────────────────────────────────────
 let pdfDoc = null;
 
-function submitForm() {
+async function submitForm() {
   const nombre = document.getElementById('nombre').value.trim();
   const rut = document.getElementById('rut').value.trim();
   const ciudad = document.getElementById('ciudad').value.trim();
@@ -303,21 +292,27 @@ function submitForm() {
     return;
   }
 
-  generatePDF(nombre, rut, ciudad, apoderado);
-  document.getElementById('formScreen').style.display = 'none';
-  document.getElementById('successScreen').style.display = 'block';
+  // Cargar logo como base64 via fetch para evitar CORS
+  let logoData = null;
+  try {
+    const resp = await fetch('https://raw.githubusercontent.com/tomaslyon/JEA-Antar/main/logo.png');
+    const blob = await resp.blob();
+    logoData = await new Promise(res => { const r = new FileReader(); r.onload = () => res(r.result); r.readAsDataURL(blob); });
+  } catch(e) { logoData = null; }
+
+  generatePDF(nombre, rut, ciudad, apoderado, logoData);
+  document.getElementById('formScreen').style.cssText = 'display:none !important';
+  document.getElementById('successScreen').style.cssText = 'display:block !important';
 }
 
-function generatePDF(nombre, rut, ciudad, apoderado) {
+function generatePDF(nombre, rut, ciudad, apoderado, logoData) {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'mm', format: 'letter' });
   const W = 215.9, ml = 25, mr = 25, tw = W - ml - mr;
 
-  // Logo desde canvas oculto ya cargado
-  const logoCanvas = document.getElementById('logoCanvas');
-  const logoData = logoCanvas.toDataURL('image/png');
-  const logoW = 38, logoH = 22;
-  if (logoCanvas.dataset.loaded === 'true') {
+  // Logo real AntarChile
+  if (logoData) {
+    const logoW = 38, logoH = 22;
     doc.addImage(logoData, 'PNG', W/2 - logoW/2, 8, logoW, logoH);
   }
 
